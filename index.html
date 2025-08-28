@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ンポチソォ！ - カウンター付き</title>
+<style>
+  body{margin:0;font-family:sans-serif;background:#222;color:#fff;display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px}
+  button{font-size:1.6rem;padding:14px 28px;border-radius:10px;border:none;background:#ff4081;color:#fff;cursor:pointer}
+  .counter{font-size:1.2rem;background:#fff1;padding:8px 12px;border-radius:8px;color:#000}
+  .small{font-size:0.9rem;color:#ddd}
+</style>
+</head>
+<body>
+  <h1>ンポチソォ！</h1>
+  <div class="counter">総回数: <span id="count">0</span></div>
+  <button id="soundBtn">ンポチソォ！</button>
+  <div class="small">※ グローバルにしたい場合は Firebase 設定を貼ってください</div>
+
+  <!-- 音声ファイルは同リポジトリに置く (onpochi.mp3) -->
+  <audio id="sound" preload="auto">
+    <source src="ンポチソォ！.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Optional: Firebase SDK（有効にすると自動でグローバルカウンタを使う） -->
+  <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+
+<script>
+/* =========================
+   設定エリア：Firebase を使う場合だけ設定してください
+   例:
+   const firebaseConfig = {
+     apiKey: "...",
+     authDomain: "....firebaseapp.com",
+     databaseURL: "https://<PROJECT>.firebaseio.com",
+     projectId: "...",
+     storageBucket: "...",
+     messagingSenderId: "...",
+     appId: "..."
+   };
+   ========================= */
+const firebaseConfig = {
+apiKey:"AIzaSyDRFs6qS59xfUKOga1-ybVvAiCNJcxDeUQ", 
+authDomain: "npochiso.firebaseapp.com", 
+databaseURL:"https://npochiso-default-rtdb.firebaseio.com", 
+projectId: "npochiso",
+storageBucket:"npochiso.firebasestorage.app", 
+messagingSenderId: "337146242400",
+appId:"1:337146242400:web:ae647950d11d1db948aa05", 
+measurementId: "G-G5JEPL8KL8" };
+<-- ここを貼り替える（貼らなければlocalStorage動作）
+
+/* ------- ロジックはここから ------- */
+const soundBtn = document.getElementById('soundBtn');
+const audio = document.getElementById('sound');
+const countEl = document.getElementById('count');
+
+let usingFirebase = false;
+let localKey = 'onpochi_count_v1';
+
+async function init(){
+  if(firebaseConfig){
+    try{
+      // 動的にSDKを読み込んで初期化（互換版を使う簡易パターン）
+      await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js');
+      firebase.initializeApp(firebaseConfig);
+      window.dbRef = firebase.database().ref('onpochi_counter');
+      usingFirebase = true;
+      // 初期値を取得して表示
+      const snap = await window.dbRef.once('value');
+      const val = snap.exists() ? parseInt(snap.val(),10) || 0 : 0;
+      countEl.textContent = val;
+    }catch(e){
+      console.warn('Firebase init failed, fallback to localStorage', e);
+      usingFirebase = false;
+      loadLocal();
+    }
+  } else {
+    loadLocal();
+  }
+}
+
+function loadLocal(){
+  const n = parseInt(localStorage.getItem(localKey)||'0',10) || 0;
+  countEl.textContent = n;
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+}
+
+async function incrementCount(){
+  // play sound first (user gesture)
+  audio.currentTime = 0;
+  audio.play().catch(()=>{});
+  if(usingFirebase && window.dbRef){
+    try{
+      // 原子的に増やす：トランザクション
+      await window.dbRef.transaction(cur => {
+        return (parseInt(cur,10) || 0) + 1;
+      });
+      const snap = await window.dbRef.once('value');
+      countEl.textContent = parseInt(snap.val(),10) || 0;
+    }catch(e){
+      console.error('firebase increment error', e);
+      // fallback: local
+      incLocal();
+    }
+  } else {
+    incLocal();
+  }
+}
+
+function incLocal(){
+  const n = (parseInt(localStorage.getItem(localKey)||'0',10) || 0) + 1;
+  localStorage.setItem(localKey, n);
+  countEl.textContent = n;
+}
+
+/* 長押しで連打：mousedown/touchstartでインターバル開始、mouseup/touchendで停止 */
+let holdIv = null;
+function startHold(){
+  if(holdIv) return;
+  incrementCount(); // 最初の一回
+  holdIv = setInterval(incrementCount, 200);
+}
+function stopHold(){
+  if(holdIv){ clearInterval(holdIv); holdIv = null; }
+}
+
+/* イベント */
+soundBtn.addEventListener('click', incrementCount);
+soundBtn.addEventListener('mousedown', startHold);
+soundBtn.addEventListener('mouseup', stopHold);
+soundBtn.addEventListener('mouseleave', stopHold);
+soundBtn.addEventListener('touchstart', e=>{ e.preventDefault(); startHold(); }, {passive:false});
+soundBtn.addEventListener('touchend', stopHold);
+
+/* 初期化 */
+init();
+</script>
+</body>
+</html>
