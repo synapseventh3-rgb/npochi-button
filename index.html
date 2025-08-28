@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ンポチソォ！ボタン</title>
+<style>
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #222;
+  color: #fff;
+  font-family: sans-serif;
+  margin: 0;
+}
+button {
+  font-size: 2rem;
+  padding: 20px 40px;
+  border: none;
+  border-radius: 10px;
+  background: #ff4081;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+button:active {
+  transform: scale(0.95);
+}
+</style>
+</head>
+<body>
+
+<h1>ンポチソォ！ボタン</h1>
+<button id="soundBtn">ンポチソォ！</button>
+
+<audio id="sound" preload="auto">
+  <source src="https://cdn.pixabay.com/download/audio/2021/09/29/audio_6a8ec48986.mp3?filename=click-10993.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const btn = document.getElementById('soundBtn');
+const audio = document.getElementById('sound');
+
+btn.addEventListener('click', () => {
+  audio.currentTime = 0;
+  audio.play().catch(() => alert('音を再生するにはクリックしてください'));
+});
+</script>
+
+</body>
+</html>
