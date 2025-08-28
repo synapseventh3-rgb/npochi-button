@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ンポチソォ！カウンター</title>
+<style>
+  body{background:#222;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px}
+  button{font-size:1.8rem;padding:14px 28px;border-radius:12px;border:none;background:#ff4081;color:#fff;cursor:pointer}
+  #count{font-size:1.6rem;margin-top:14px}
+</style>
+</head>
+<body>
+  <h1>ンポチソォ！</h1>
+  <div id="count">総回数: <strong>0</strong></div>
+  <button id="btn">ンポチソォ！</button>
+  <audio id="s" src="onpochi.mp3" preload="auto"></audio>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+// Firebase設定
+const firebaseConfig = {
+  apiKey: "AIzaSyDRFs6qS59xfUKOga1-ybVvAiCNJcxDeUQ",
+  authDomain: "npochiso.firebaseapp.com",
+  databaseURL: "https://npochiso-default-rtdb.firebaseio.com",
+  projectId: "npochiso",
+  storageBucket: "npochiso.firebasestorage.app",
+  messagingSenderId: "337146242400",
+  appId: "1:337146242400:web:ae647950d11d1db948aa05",
+  measurementId: "G-G5JEPL8KL8"
+};
+
+// Firebase初期化
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const counterRef = db.ref('onpochi_counter');
+
+// UI要素
+const countEl = document.querySelector('#count strong');
+const btn = document.getElementById('btn');
+const audioEl = document.getElementById('s');
+
+// Firebaseから現在値をリアルタイム取得
+counterRef.on('value', snap => {
+  const v = snap.exists() ? Number(snap.val()) : 0;
+  countEl.textContent = v;
+});
+
+// クリック時に即カウント＋音
+btn.addEventListener('click', ()=>{
+  audioEl.currentTime = 0;
+  audioEl.play();
+  counterRef.transaction(current => (Number(current) || 0) + 1);
+});
+</script>
+</body>
+</html>
