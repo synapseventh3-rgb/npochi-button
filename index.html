@@ -12,7 +12,7 @@ button{font-size:1.8rem;padding:14px 28px;border-radius:12px;border:none;backgro
     background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-align:center;line-height:1.2;}
+    line-height:1.2;}
 #container{position:relative;width:100%;height:300px;margin-top:40px;}
 </style>
 </head>
@@ -43,6 +43,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const counterRef = db.ref('onpochi_counter');
+const celebrateRef = db.ref('last_celebrate');
 
 const countEl = document.querySelector('#count strong');
 const btn = document.getElementById('btn');
@@ -58,8 +59,8 @@ function animateMessage(count){
   messageEl.style.bottom = '-50px';
   messageEl.style.display = 'block';
   
-  const targetBottom = 50; // ボタン下で停止
-  const duration = 1000; // 上昇速度(ms)
+  const targetBottom = 50; 
+  const duration = 1000; 
   const startTime = performance.now();
 
   function step(now){
@@ -73,7 +74,7 @@ function animateMessage(count){
 // 下降アニメーション（1000回押下で少しずつ下がる）
 function stepDown(currentCount){
   if(!showAt) return;
-  const distance = 200; // 下に消える距離
+  const distance = 200; 
   const progress = (currentCount - showAt)/1000;
   if(progress>=1){
     messageEl.style.display='none';
@@ -84,6 +85,22 @@ function stepDown(currentCount){
   messageEl.style.bottom = targetBottom+'px';
 }
 
+// ページロード時にカウントとお祝い状態を復元
+Promise.all([counterRef.get(), celebrateRef.get()]).then(([countSnap, celebrateSnap])=>{
+  const currentCount = countSnap.exists() ? Number(countSnap.val()) : 0;
+  const lastCelebrate = celebrateSnap.exists() ? Number(celebrateSnap.val()) : 0;
+
+  countEl.textContent = currentCount;
+  lastThreshold = Math.floor(currentCount/10000)*10000;
+
+  if(currentCount - lastCelebrate < 1000 && lastCelebrate > 0){
+    showAt = lastCelebrate;
+    messageEl.innerHTML = `${lastCelebrate}回達成<br>おめでとう！！`;
+    messageEl.style.display = 'block';
+    messageEl.style.bottom = (50 - (currentCount - lastCelebrate)/1000*200)+'px';
+  }
+});
+
 // カウント更新
 counterRef.on('value', snap => {
   const v = snap.exists() ? Number(snap.val()) : 0;
@@ -93,6 +110,7 @@ counterRef.on('value', snap => {
     lastThreshold = Math.floor(v/10000)*10000;
     showAt = v;
     animateMessage(lastThreshold);
+    celebrateRef.set(lastThreshold);
   }
 
   if(showAt){
