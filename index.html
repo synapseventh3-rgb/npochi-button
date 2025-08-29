@@ -93,11 +93,15 @@ Promise.all([counterRef.get(), celebrateRef.get()]).then(([countSnap, celebrateS
   countEl.textContent = currentCount;
   lastThreshold = Math.floor(currentCount/10000)*10000;
 
-  if(currentCount - lastCelebrate < 1000 && lastCelebrate > 0){
+  // 差が 1000 未満かつまだ1000回未経過の場合のみ表示
+  if(lastCelebrate > 0 && (currentCount - lastCelebrate) < 1000){
     showAt = lastCelebrate;
     messageEl.innerHTML = `${lastCelebrate}回達成<br>おめでとう！！`;
     messageEl.style.display = 'block';
     messageEl.style.bottom = (50 - (currentCount - lastCelebrate)/1000*200)+'px';
+  } else {
+    messageEl.style.display = 'none';
+    showAt = 0;
   }
 });
 
